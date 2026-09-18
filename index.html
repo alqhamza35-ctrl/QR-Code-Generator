@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            min-height: 100vh; display: flex; justify-content: center; align-items: center;
+            padding: 20px; font-family: Arial, Tahoma, sans-serif;
+            background: linear-gradient(135deg, #eef2ff, #f8fafc); color: #1e293b;
+        }
+        .card {
+            width: 100%; max-width: 500px; background: #fff; padding: 35px;
+            border-radius: 20px; box-shadow: 0 10px 35px rgba(15,23,42,.12); text-align: center;
+        }
+        .icon {
+            width: 70px; height: 70px; margin: 0 auto 15px; display: flex;
+            align-items: center; justify-content: center; border-radius: 18px;
+            background: #eef2ff; font-size: 35px;
+        }
+        h1 { font-size: 28px; margin-bottom: 10px; color: #0f172a; }
+        .description { color: #64748b; font-size: 15px; line-height: 1.7; margin-bottom: 25px; }
+        .input-group { text-align: right; margin-bottom: 15px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; color: #334155; }
+        input {
+            width: 100%; padding: 14px 16px; border: 2px solid #e2e8f0;
+            border-radius: 12px; outline: none; font-size: 15px; direction: ltr; transition: .2s;
+        }
+        input:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,.12); }
+        button {
+            width: 100%; border: none; padding: 14px 18px; border-radius: 12px;
+            font-size: 16px; font-weight: bold; cursor: pointer; transition: .2s;
+        }
+        .generate-btn { background: #4f46e5; color: #fff; margin-top: 5px; }
+        .generate-btn:hover { background: #4338ca; transform: translateY(-1px); }
+        .message {
+            display: none; margin-top: 15px; padding: 12px; border-radius: 10px;
+            font-size: 14px; background: #fee2e2; color: #b91c1c;
+        }
+        .qr-section { display: none; margin-top: 30px; padding-top: 25px; border-top: 1px solid #e2e8f0; }
+        .qr-section h2 { font-size: 19px; margin-bottom: 18px; color: #334155; }
+        #qrcode { display: flex; justify-content: center; align-items: center; min-height: 220px; margin-bottom: 20px; }
+        #qrcode img, #qrcode canvas { max-width: 100%; height: auto; padding: 10px; background: #fff; border-radius: 8px; }
+        .download-btn { background: #0f172a; color: #fff; }
+        .download-btn:hover { background: #1e293b; }
+        @media (max-width: 600px) {
+            body { padding: 15px; }
+            .card { padding: 25px 20px; border-radius: 16px; }
+            h1 { font-size: 24px; }
+            .description { font-size: 14px; }
+        }
+    </style>
+</head>
+<body>
+    <main class="card">
+        <div class="icon">▦</div>
+        <h1>تحويل الرابط إلى QR Code</h1>
+        <p class="description">أدخل الرابط الذي تريد تحويله إلى رمز QR Code ثم اضغط على زر إنشاء.</p>
+
+        <div class="input-group">
+            <label for="urlInput">الرابط</label>
+            <input type="url" id="urlInput" placeholder="https://example.com" autocomplete="off">
+        </div>
+
+        <button class="generate-btn" onclick="generateQRCode()">إنشاء QR Code</button>
+        <div id="message" class="message"></div>
+
+        <section id="qrSection" class="qr-section">
+            <h2>رمز QR الخاص بك</h2>
+            <div id="qrcode"></div>
+            <button class="download-btn" onclick="downloadQRCode()">تحميل الصورة PNG</button>
+        </section>
+    </main>
+
+    <script>
+        const urlInput = document.getElementById("urlInput");
+        const message = document.getElementById("message");
+        const qrSection = document.getElementById("qrSection");
+        const qrContainer = document.getElementById("qrcode");
+
+        function showMessage(text) {
+            message.textContent = text;
+            message.style.display = "block";
+        }
+
+        function hideMessage() {
+            message.style.display = "none";
+        }
+
+        function isValidURL(value) {
+            try {
+                const url = new URL(value);
+                return url.protocol === "http:" || url.protocol === "https:";
+            } catch {
+                return false;
+            }
+        }
+
+        function generateQRCode() {
+            const url = urlInput.value.trim();
+            hideMessage();
+
+            if (!url) {
+                showMessage("من فضلك أدخل رابطًا أولاً.");
+                qrSection.style.display = "none";
+                return;
+            }
+
+            if (!isValidURL(url)) {
+                showMessage("من فضلك أدخل رابطًا صحيحًا يبدأ بـ https:// أو http://");
+                qrSection.style.display = "none";
+                return;
+            }
+
+            qrContainer.innerHTML = "";
+
+            new QRCode(qrContainer, {
+                text: url,
+                width: 220,
+                height: 220,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+
+            qrSection.style.display = "block";
+        }
+
+        function downloadQRCode() {
+            const canvas = qrContainer.querySelector("canvas");
+            const image = qrContainer.querySelector("img");
+            let downloadURL = null;
+
+            if (canvas) downloadURL = canvas.toDataURL("image/png");
+            else if (image) downloadURL = image.src;
+
+            if (!downloadURL) {
+                showMessage("أنشئ QR Code أولاً.");
+                return;
+            }
+
+            const link = document.createElement("a");
+            link.href = downloadURL;
+            link.download = "qr-code.png";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        urlInput.addEventListener("keydown", event => {
+            if (event.key === "Enter") generateQRCode();
+        });
+    </script>
+</body>
+</html>
