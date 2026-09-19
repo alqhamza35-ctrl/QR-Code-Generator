@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QR Code Generator</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -23,29 +24,64 @@
         }
         h1 { font-size: 28px; margin-bottom: 10px; color: #0f172a; }
         .description { color: #64748b; font-size: 15px; line-height: 1.7; margin-bottom: 25px; }
+        .tabs {
+            display: flex; gap: 10px; background: #f1f5f9; padding: 6px;
+            border-radius: 14px; margin-bottom: 20px;
+        }
+        .tab {
+            flex: 1; padding: 11px; border: none; border-radius: 10px; background: transparent;
+            font-size: 15px; font-weight: bold; color: #64748b; cursor: pointer; transition: .2s;
+            font-family: inherit;
+        }
+        .tab.active { background: #fff; color: #4f46e5; box-shadow: 0 2px 8px rgba(15,23,42,.1); }
         .input-group { text-align: right; margin-bottom: 15px; }
         label { display: block; margin-bottom: 8px; font-weight: bold; color: #334155; }
-        input {
+        input[type="url"] {
             width: 100%; padding: 14px 16px; border: 2px solid #e2e8f0;
             border-radius: 12px; outline: none; font-size: 15px; direction: ltr; transition: .2s;
         }
-        input:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,.12); }
-        button {
+        input[type="url"]:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,.12); }
+        button.action {
             width: 100%; border: none; padding: 14px 18px; border-radius: 12px;
             font-size: 16px; font-weight: bold; cursor: pointer; transition: .2s;
+            font-family: inherit;
         }
         .generate-btn { background: #4f46e5; color: #fff; margin-top: 5px; }
         .generate-btn:hover { background: #4338ca; transform: translateY(-1px); }
-        .message {
-            display: none; margin-top: 15px; padding: 12px; border-radius: 10px;
-            font-size: 14px; background: #fee2e2; color: #b91c1c;
-        }
-        .qr-section { display: none; margin-top: 30px; padding-top: 25px; border-top: 1px solid #e2e8f0; }
-        .qr-section h2 { font-size: 19px; margin-bottom: 18px; color: #334155; }
-        #qrcode { display: flex; justify-content: center; align-items: center; min-height: 220px; margin-bottom: 20px; }
-        #qrcode img, #qrcode canvas { max-width: 100%; height: auto; padding: 10px; background: #fff; border-radius: 8px; }
         .download-btn { background: #0f172a; color: #fff; }
         .download-btn:hover { background: #1e293b; }
+        .copy-btn { background: #0f172a; color: #fff; margin-top: 12px; }
+        .copy-btn:hover { background: #1e293b; }
+        .message { display: none; margin-bottom: 15px; padding: 12px; border-radius: 10px; font-size: 14px; }
+        .message.error { background: #fee2e2; color: #b91c1c; }
+        .message.success { background: #dcfce7; color: #15803d; }
+        .qr-section { display: none; margin-top: 30px; padding-top: 25px; border-top: 1px solid #e2e8f0; }
+        .qr-section h2, .scan-title { font-size: 19px; margin-bottom: 18px; color: #334155; }
+        #qrcode { display: flex; justify-content: center; align-items: center; min-height: 220px; margin-bottom: 20px; }
+        #qrcode img, #qrcode canvas { max-width: 100%; height: auto; padding: 10px; background: #fff; border-radius: 8px; }
+        .drop-zone {
+            border: 2px dashed #cbd5e1; border-radius: 14px; padding: 35px 20px;
+            cursor: pointer; transition: .2s; color: #64748b;
+        }
+        .drop-zone:hover, .drop-zone.dragover { border-color: #6366f1; background: #eef2ff; color: #4f46e5; }
+        .drop-zone .drop-icon {
+            width: 55px; height: 55px; margin: 0 auto 12px; border-radius: 50%;
+            background: #eef2ff; display: flex; align-items: center; justify-content: center;
+            font-size: 26px; color: #4f46e5;
+        }
+        .drop-zone p { font-size: 14px; line-height: 1.7; }
+        #scanPreview { display: none; margin-top: 20px; }
+        #scanPreview img { max-width: 180px; border: 1px solid #e2e8f0; border-radius: 10px; padding: 8px; }
+        #scanResult {
+            display: none; margin-top: 20px; padding: 15px; background: #f8fafc;
+            border: 1px solid #e2e8f0; border-radius: 12px;
+        }
+        #scanResult .link-label { font-size: 13px; color: #64748b; margin-bottom: 8px; }
+        #resultText {
+            display: block; word-break: break-all; direction: ltr; font-size: 15px;
+            color: #4f46e5; text-decoration: none; font-weight: bold;
+        }
+        #resultText.plain { color: #334155; font-weight: normal; }
         @media (max-width: 600px) {
             body { padding: 15px; }
             .card { padding: 25px 20px; border-radius: 16px; }
@@ -57,21 +93,48 @@
 <body>
     <main class="card">
         <div class="icon">▦</div>
-        <h1>تحويل الرابط إلى QR Code</h1>
-        <p class="description">أدخل الرابط الذي تريد تحويله إلى رمز QR Code ثم اضغط على زر إنشاء.</p>
+        <h1>أداة QR Code</h1>
+        <p class="description">حوّل رابطك إلى رمز QR Code، أو ارفع صورة QR Code لاستخراج الرابط منها.</p>
 
-        <div class="input-group">
-            <label for="urlInput">الرابط</label>
-            <input type="url" id="urlInput" placeholder="https://example.com" autocomplete="off">
+        <div class="tabs">
+            <button class="tab active" id="tabCreate" onclick="switchTab('create')">إنشاء QR</button>
+            <button class="tab" id="tabScan" onclick="switchTab('scan')">قراءة QR</button>
         </div>
 
-        <button class="generate-btn" onclick="generateQRCode()">إنشاء QR Code</button>
         <div id="message" class="message"></div>
 
-        <section id="qrSection" class="qr-section">
-            <h2>رمز QR الخاص بك</h2>
-            <div id="qrcode"></div>
-            <button class="download-btn" onclick="downloadQRCode()">تحميل الصورة PNG</button>
+        <section id="createPanel">
+            <div class="input-group">
+                <label for="urlInput">الرابط</label>
+                <input type="url" id="urlInput" placeholder="https://example.com" autocomplete="off">
+            </div>
+
+            <button class="action generate-btn" onclick="generateQRCode()">إنشاء QR Code</button>
+
+            <section id="qrSection" class="qr-section">
+                <h2>رمز QR الخاص بك</h2>
+                <div id="qrcode"></div>
+                <button class="action download-btn" onclick="downloadQRCode()">تحميل الصورة PNG</button>
+            </section>
+        </section>
+
+        <section id="scanPanel" style="display:none">
+            <div class="drop-zone" id="dropZone">
+                <div class="drop-icon">▦</div>
+                <p>اسحب صورة QR Code هنا<br>أو اضغط لاختيار صورة من جهازك</p>
+                <input type="file" id="fileInput" accept="image/*" hidden>
+            </div>
+
+            <div id="scanPreview">
+                <p class="scan-title">الصورة المختارة</p>
+                <img id="previewImg" alt="QR">
+            </div>
+
+            <div id="scanResult">
+                <p class="link-label">النتيجة</p>
+                <a id="resultText" href="#" target="_blank" rel="noopener"></a>
+                <button class="action copy-btn" onclick="copyResult()">نسخ النتيجة</button>
+            </div>
         </section>
     </main>
 
@@ -80,14 +143,36 @@
         const message = document.getElementById("message");
         const qrSection = document.getElementById("qrSection");
         const qrContainer = document.getElementById("qrcode");
+        const createPanel = document.getElementById("createPanel");
+        const scanPanel = document.getElementById("scanPanel");
+        const tabCreate = document.getElementById("tabCreate");
+        const tabScan = document.getElementById("tabScan");
+        const dropZone = document.getElementById("dropZone");
+        const fileInput = document.getElementById("fileInput");
+        const scanPreview = document.getElementById("scanPreview");
+        const previewImg = document.getElementById("previewImg");
+        const scanResult = document.getElementById("scanResult");
+        const resultText = document.getElementById("resultText");
 
-        function showMessage(text) {
+        let lastResult = "";
+
+        function showMessage(text, type = "error") {
             message.textContent = text;
+            message.className = "message " + type;
             message.style.display = "block";
         }
 
         function hideMessage() {
             message.style.display = "none";
+        }
+
+        function switchTab(tab) {
+            const isCreate = tab === "create";
+            createPanel.style.display = isCreate ? "block" : "none";
+            scanPanel.style.display = isCreate ? "none" : "block";
+            tabCreate.classList.toggle("active", isCreate);
+            tabScan.classList.toggle("active", !isCreate);
+            hideMessage();
         }
 
         function isValidURL(value) {
@@ -148,6 +233,96 @@
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+        }
+
+        dropZone.addEventListener("click", () => fileInput.click());
+
+        ["dragenter", "dragover"].forEach(eventName =>
+            dropZone.addEventListener(eventName, event => {
+                event.preventDefault();
+                dropZone.classList.add("dragover");
+            })
+        );
+
+        ["dragleave", "drop"].forEach(eventName =>
+            dropZone.addEventListener(eventName, event => {
+                event.preventDefault();
+                dropZone.classList.remove("dragover");
+            })
+        );
+
+        dropZone.addEventListener("drop", event => {
+            const file = event.dataTransfer.files[0];
+            if (file) handleFile(file);
+        });
+
+        fileInput.addEventListener("change", () => {
+            const file = fileInput.files[0];
+            if (file) handleFile(file);
+        });
+
+        function handleFile(file) {
+            hideMessage();
+            scanResult.style.display = "none";
+
+            if (!file.type.startsWith("image/")) {
+                showMessage("من فضلك اختر ملف صورة صالحًا.");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = event => {
+                previewImg.src = event.target.result;
+                scanPreview.style.display = "block";
+                decodeImage(event.target.result);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function decodeImage(dataURL) {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement("canvas");
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext("2d", { willReadFrequently: true });
+                ctx.drawImage(img, 0, 0);
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const code = jsQR(imageData.data, imageData.width, imageData.height);
+
+                if (!code || !code.data) {
+                    showMessage("لم يتم العثور على QR Code في هذه الصورة.");
+                    return;
+                }
+
+                lastResult = code.data;
+                resultText.textContent = code.data;
+
+                if (isValidURL(code.data)) {
+                    resultText.href = code.data;
+                    resultText.classList.remove("plain");
+                } else {
+                    resultText.removeAttribute("href");
+                    resultText.classList.add("plain");
+                }
+
+                scanResult.style.display = "block";
+                showMessage("تم قراءة QR Code بنجاح.", "success");
+            };
+            img.onerror = () => showMessage("تعذر قراءة هذه الصورة.");
+            img.src = dataURL;
+        }
+
+        function copyResult() {
+            if (!lastResult) {
+                showMessage("اقرأ QR Code أولاً.");
+                return;
+            }
+            navigator.clipboard.writeText(lastResult).then(() => {
+                showMessage("تم نسخ النتيجة.", "success");
+            }).catch(() => {
+                showMessage("تعذر النسخ.");
+            });
         }
 
         urlInput.addEventListener("keydown", event => {
