@@ -1,0 +1,545 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f7fb">
+  <title>QR Studio — Make your QR code</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #172033;
+      background: #f6f7fb;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+      --muted: #737d90;
+      --purple: #7048e8;
+      --border: #e6e8ef;
+    }
+
+    * { box-sizing: border-box; }
+
+    body { margin: 0; min-height: 100vh; }
+
+    .page {
+      width: min(1080px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 30px 0 56px;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 48px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      font-size: 19px;
+      font-weight: 750;
+      letter-spacing: -0.5px;
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 38px;
+      height: 38px;
+      place-items: center;
+      border-radius: 12px;
+      color: white;
+      background: var(--purple);
+    }
+
+    .brand-mark svg { width: 22px; height: 22px; }
+
+    .header-note { color: var(--muted); font-size: 13px; }
+
+    .intro { max-width: 660px; margin: 0 auto 34px; text-align: center; }
+
+    .eyebrow {
+      margin: 0 0 12px;
+      color: var(--purple);
+      font-size: 12px;
+      font-weight: 750;
+      letter-spacing: 1.3px;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(34px, 5vw, 52px);
+      line-height: 1.08;
+      letter-spacing: -2px;
+    }
+
+    .intro p:last-child {
+      margin: 15px 0 0;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 360px;
+      gap: 22px;
+      align-items: stretch;
+    }
+
+    .card {
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: #fff;
+      box-shadow: 0 12px 40px rgba(32, 39, 61, 0.045);
+    }
+
+    .form-card { padding: 28px; }
+
+    .section-title {
+      margin: 0 0 8px;
+      font-size: 17px;
+      letter-spacing: -0.3px;
+    }
+
+    .section-description {
+      margin: 0 0 26px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    label {
+      display: block;
+      margin: 0 0 8px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    textarea {
+      display: block;
+      width: 100%;
+      min-height: 116px;
+      resize: vertical;
+      border: 1px solid #dfe2eb;
+      border-radius: 12px;
+      padding: 13px 14px;
+      outline: none;
+      color: #172033;
+      background: #fff;
+      font: inherit;
+      font-size: 14px;
+      line-height: 1.5;
+      transition: border-color .2s, box-shadow .2s;
+    }
+
+    textarea:focus { border-color: var(--purple); box-shadow: 0 0 0 3px #7048e81b; }
+    textarea::placeholder { color: #a0a7b5; }
+
+    .field-hint { margin: 7px 0 0; color: var(--muted); font-size: 12px; }
+
+    .photo-section { margin-top: 25px; }
+
+    .photo-picker {
+      display: flex;
+      min-height: 68px;
+      align-items: center;
+      gap: 12px;
+      border: 1px dashed #d4d7e2;
+      border-radius: 12px;
+      padding: 11px 13px;
+      background: #fbfbfd;
+    }
+
+    .photo-button {
+      display: inline-flex;
+      min-height: 40px;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 1px solid #e0dafa;
+      border-radius: 9px;
+      padding: 0 13px;
+      color: #5532c8;
+      background: #f6f2ff;
+      cursor: pointer;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      transition: background .2s, transform .2s;
+    }
+
+    .photo-button:hover { background: #eee8ff; }
+    .photo-button:active { transform: scale(.98); }
+    .photo-button svg { width: 17px; height: 17px; }
+    #photo-input { display: none; }
+
+    .photo-info {
+      min-width: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .photo-info strong {
+      display: block;
+      overflow: hidden;
+      color: #353d4f;
+      font-size: 12px;
+      font-weight: 650;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .remove-photo {
+      margin-left: auto;
+      border: 0;
+      padding: 7px;
+      color: #8c94a3;
+      background: transparent;
+      cursor: pointer;
+      font: inherit;
+      font-size: 12px;
+    }
+
+    .remove-photo:hover { color: #c33b4b; }
+
+    .generate-button, .download-button {
+      display: flex;
+      width: 100%;
+      min-height: 48px;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      border: 0;
+      border-radius: 11px;
+      color: #fff;
+      background: var(--purple);
+      cursor: pointer;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 750;
+      transition: background .2s, transform .2s;
+    }
+
+    .generate-button { margin-top: 25px; }
+    .generate-button:hover, .download-button:hover { background: #5e39d0; }
+    .generate-button:active, .download-button:active { transform: translateY(1px); }
+    .generate-button svg, .download-button svg { width: 18px; height: 18px; }
+
+    .preview-card {
+      display: flex;
+      min-height: 420px;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 28px;
+      background: linear-gradient(145deg, #fff 0%, #fbfaff 100%);
+    }
+
+    .preview-label {
+      margin: 0 0 21px;
+      color: #7c8493;
+      font-size: 11px;
+      font-weight: 750;
+      letter-spacing: 1.1px;
+      text-transform: uppercase;
+    }
+
+    .qr-frame {
+      display: grid;
+      width: 256px;
+      height: 256px;
+      place-items: center;
+      overflow: hidden;
+      border: 1px solid #edeef3;
+      border-radius: 15px;
+      background: white;
+      box-shadow: 0 8px 26px rgba(30, 34, 52, .07);
+    }
+
+    #qr-output { display: block; width: 232px; height: 232px; }
+    #qr-output canvas { display: block; width: 232px; height: 232px; }
+
+    .placeholder {
+      display: grid;
+      width: 232px;
+      height: 232px;
+      place-items: center;
+      border: 1px dashed #d9dce6;
+      border-radius: 10px;
+      color: #b0b6c3;
+      background-color: #fcfcfe;
+      background-image: linear-gradient(45deg, #f3f4f8 25%, transparent 25%), linear-gradient(-45deg, #f3f4f8 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #f3f4f8 75%), linear-gradient(-45deg, transparent 75%, #f3f4f8 75%);
+      background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+      background-size: 16px 16px;
+      font-size: 13px;
+    }
+
+    .preview-caption {
+      min-height: 18px;
+      margin: 17px 0 16px;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+    }
+
+    .download-button { min-height: 43px; font-size: 13px; }
+    .download-button:disabled { color: #9da3af; background: #eceef3; cursor: not-allowed; }
+    .download-button:disabled:hover { background: #eceef3; }
+    .status { min-height: 18px; margin: 11px 0 0; color: #bd3449; font-size: 12px; text-align: center; }
+
+    footer { margin-top: 29px; color: #969dab; font-size: 12px; text-align: center; }
+
+    @media (max-width: 760px) {
+      .page { width: min(540px, calc(100% - 30px)); padding-top: 20px; }
+      header { margin-bottom: 38px; }
+      .header-note { display: none; }
+      .intro { margin-bottom: 27px; }
+      .workspace { grid-template-columns: 1fr; }
+      .preview-card { min-height: 385px; }
+    }
+
+    @media (max-width: 420px) {
+      .form-card, .preview-card { padding: 21px; }
+      .photo-picker { flex-wrap: wrap; }
+      .photo-info { flex: 1; }
+      .remove-photo { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header>
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h3v3h-3zM20 14v2M14 20h2M20 19v2"/>
+          </svg>
+        </span>
+        QR Studio
+      </div>
+      <span class="header-note">Your QR codes are made in your browser</span>
+    </header>
+
+    <section class="intro">
+      <p class="eyebrow">Simple. Personal. Ready to share.</p>
+      <h1>Make a QR code<br>that feels like you.</h1>
+      <p>Turn any link or message into a QR code. Add a photo in the center and download your design.</p>
+    </section>
+
+    <section class="workspace" aria-label="QR code generator">
+      <div class="card form-card">
+        <h2 class="section-title">Your QR code</h2>
+        <p class="section-description">Add the link or text you want people to open when they scan.</p>
+
+        <label for="qr-text">Link or text</label>
+        <textarea id="qr-text" placeholder="https://yourwebsite.com" maxlength="1800"></textarea>
+        <p class="field-hint">Works with websites, Wi-Fi details, contact info, and more.</p>
+
+        <div class="photo-section">
+          <label>Add a photo (optional)</label>
+          <div class="photo-picker">
+            <input id="photo-input" type="file" accept="image/*">
+            <button class="photo-button" id="choose-photo" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/>
+              </svg>
+              Choose photo
+            </button>
+            <span class="photo-info" id="photo-info">Add a photo to place it in the center of your QR code.</span>
+            <button class="remove-photo" id="remove-photo" type="button" hidden>Remove</button>
+          </div>
+        </div>
+
+        <button class="generate-button" id="generate" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 4v6h6M20 20v-6h-6"/><path d="M5.5 15a7 7 0 0 0 12 2L20 14M4 10l2.5-3A7 7 0 0 1 18.5 9"/>
+          </svg>
+          Generate QR code
+        </button>
+      </div>
+
+      <div class="card preview-card">
+        <p class="preview-label">Live preview</p>
+        <div class="qr-frame">
+          <div id="qr-output" aria-label="QR code preview">
+            <div class="placeholder">Your QR code appears here</div>
+          </div>
+        </div>
+        <p class="preview-caption" id="preview-caption">Enter your text or link to get started</p>
+        <button class="download-button" id="download" type="button" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5M12 15V3"/>
+          </svg>
+          Download PNG
+        </button>
+        <p class="status" id="status" role="status" aria-live="polite"></p>
+      </div>
+    </section>
+    <footer>Free to use · No sign-up · Your content stays on your device</footer>
+  </main>
+
+  <div id="qr-workspace" aria-hidden="true" style="position:absolute;left:-10000px;top:0"></div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script>
+    const textInput = document.getElementById("qr-text");
+    const photoInput = document.getElementById("photo-input");
+    const photoInfo = document.getElementById("photo-info");
+    const removePhotoButton = document.getElementById("remove-photo");
+    const qrOutput = document.getElementById("qr-output");
+    const qrWorkspace = document.getElementById("qr-workspace");
+    const generateButton = document.getElementById("generate");
+    const downloadButton = document.getElementById("download");
+    const previewCaption = document.getElementById("preview-caption");
+    const statusMessage = document.getElementById("status");
+
+    let selectedPhoto = null;
+    let generatedImage = null;
+
+    document.getElementById("choose-photo").addEventListener("click", () => photoInput.click());
+
+    photoInput.addEventListener("change", () => {
+      const file = photoInput.files && photoInput.files[0];
+      if (!file) return;
+      if (!file.type.startsWith("image/")) {
+        showError("Please choose an image file.");
+        photoInput.value = "";
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.addEventListener("load", () => {
+        const image = new Image();
+        image.addEventListener("load", () => {
+          selectedPhoto = image;
+          photoInfo.innerHTML = "";
+          const name = document.createElement("strong");
+          name.textContent = file.name;
+          const hint = document.createElement("span");
+          hint.textContent = "Photo will appear in the QR center";
+          photoInfo.append(name, hint);
+          removePhotoButton.hidden = false;
+          statusMessage.textContent = "";
+          if (textInput.value.trim()) generateCode();
+        });
+        image.addEventListener("error", () => showError("That image could not be opened. Please choose another."));
+        image.src = reader.result;
+      });
+      reader.addEventListener("error", () => showError("The photo could not be read. Please try again."));
+      reader.readAsDataURL(file);
+    });
+
+    removePhotoButton.addEventListener("click", () => {
+      selectedPhoto = null;
+      photoInput.value = "";
+      photoInfo.textContent = "Add a photo to place it in the center of your QR code.";
+      removePhotoButton.hidden = true;
+      if (textInput.value.trim()) generateCode();
+    });
+
+    generateButton.addEventListener("click", generateCode);
+    textInput.addEventListener("keydown", event => {
+      if ((event.ctrlKey || event.metaKey) && event.key === "Enter") generateCode();
+    });
+
+    function showError(message) {
+      statusMessage.textContent = message;
+    }
+
+    function generateCode() {
+      const text = textInput.value.trim();
+      if (!text) {
+        showError("Enter a link or text to generate your QR code.");
+        textInput.focus();
+        return;
+      }
+      if (typeof QRCode === "undefined") {
+        showError("QR generator couldn't load. Check your internet connection and try again.");
+        return;
+      }
+
+      statusMessage.textContent = "";
+      qrWorkspace.replaceChildren();
+      qrOutput.replaceChildren();
+      generatedImage = null;
+      downloadButton.disabled = true;
+
+      try {
+        new QRCode(qrWorkspace, {
+          text,
+          width: 640,
+          height: 640,
+          correctLevel: QRCode.CorrectLevel.H
+        });
+
+        const qrCanvas = qrWorkspace.querySelector("canvas");
+        if (!qrCanvas) throw new Error("QR canvas was not created");
+
+        const canvas = document.createElement("canvas");
+        canvas.width = 640;
+        canvas.height = 640;
+        const context = canvas.getContext("2d");
+        if (!context) throw new Error("Canvas is unavailable");
+        context.fillStyle = "#ffffff";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(qrCanvas, 0, 0, canvas.width, canvas.height);
+
+        if (selectedPhoto) {
+          const size = 126;
+          const x = (canvas.width - size) / 2;
+          const y = (canvas.height - size) / 2;
+          const padding = 12;
+          const radius = 20;
+
+          context.fillStyle = "#ffffff";
+          context.beginPath();
+          context.roundRect(x - padding, y - padding, size + padding * 2, size + padding * 2, radius);
+          context.fill();
+
+          context.save();
+          context.beginPath();
+          context.roundRect(x, y, size, size, radius - 5);
+          context.clip();
+          const scale = Math.max(size / selectedPhoto.width, size / selectedPhoto.height);
+          const cropWidth = size / scale;
+          const cropHeight = size / scale;
+          const cropX = (selectedPhoto.width - cropWidth) / 2;
+          const cropY = (selectedPhoto.height - cropHeight) / 2;
+          context.drawImage(selectedPhoto, cropX, cropY, cropWidth, cropHeight, x, y, size, size);
+          context.restore();
+        }
+
+        const image = new Image();
+        image.addEventListener("load", () => {
+          generatedImage = image;
+          qrOutput.replaceChildren(image);
+          image.alt = "Generated QR code";
+          image.style.width = "232px";
+          image.style.height = "232px";
+          image.style.display = "block";
+          downloadButton.disabled = false;
+          previewCaption.textContent = selectedPhoto ? "Your photo is placed in the center" : "Ready to scan and share";
+          statusMessage.textContent = "";
+        });
+        image.addEventListener("error", () => showError("The QR preview could not be created. Please try again."));
+        image.src = canvas.toDataURL("image/png");
+      } catch (error) {
+        showError("Couldn't create that QR code. Try using a shorter link or message.");
+      }
+    }
+
+    downloadButton.addEventListener("click", () => {
+      if (!generatedImage) return;
+      const link = document.createElement("a");
+      link.download = "qr-code.png";
+      link.href = generatedImage.src;
+      link.click();
+    });
+  </script>
+</body>
+</html>
